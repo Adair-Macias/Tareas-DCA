@@ -1,0 +1,159 @@
+---
+title: "1. Datos, Modelos y Software. Ejercicios"
+date: "Enero 2025, Adair Macías"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    theme: cerulean
+---
+
+
+<style>
+body {
+text-align: justify}
+</style>
+
+<style type="text/css">
+body{/*Normal*/
+     font-size: 20px;
+}
+</style>
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(tidyverse)
+library(discrtr) # A companion package for the book Introduction to Discrete Choice Analysis with `R`
+library(mlogit) # Multinomial Logit Models
+library(readr) # Read Rectangular Text Data
+library(plotly)
+```
+
+
+
+Invoke data set Mode from package mlogit. To do this you need to first load the package. This is a data set with choices about mode of transportation. This is done as follows:
+
+```{r}
+data("Mode")
+```
+
+Once you have loaded the data set, answer the following questions:
+Describe this data set. How many variables are there and of which type (i.e., categorical/quantitative)?
+
+```{r}
+glimpse(Mode)
+```
+*Comentario:*
+Hay 9 variables, de las cuales solo una (choice) corresponde al tipo categórico, la demás son de tipo cuantitativo.
+
+
+
+
+How many different modes of transportation are in this data set? What is the most popular mode? What is the least popular mode?
+
+```{r}
+summary(Mode)
+```
+*Comentarios:*
+```{r}
+
+modos_transporte <- length(unique(Mode$choice)) #unique para extraer los valores de la columna Choice
+print(paste("Los modos de transporte que hay son:", paste(modos_transporte, collapse = ", ")))
+
+unidades <- table(Mode$choice) #table para contar cuantas veces se repite cada modo de transporte
+
+mas_popular <- names(which.max(unidades)) #names para extraer el nombre
+print(paste("El modo de transporte más polular es:", paste(mas_popular)))
+
+menos_popular <- names(which.min(unidades))
+print(paste("El modo de transporte menos polular es:", paste(menos_popular)))
+
+```
+
+
+```{r}
+ggplot(Mode)+
+  geom_bar(aes(choice, fill=choice), color="black", show.legend = FALSE)+
+  ggtitle("Distribución de los modos de transporte")+
+  theme(plot.title = element_text(hjust = 0.5))
+  theme_bw()
+```
+
+
+In general, what is the most expensive mode? The least expensive?
+
+
+```{r}
+ggplot(Mode)+
+  geom_density(aes(cost.car, fill="car"), color="black", alpha=0.5)+
+  geom_density(aes(cost.carpool , fill="carpool"), color="black", alpha=0.5)+
+  geom_density(aes(cost.bus, fill="bus"), color="black", alpha=0.5)+
+  geom_density(aes(cost.rail, fill="rail"), color="black", alpha=0.5)+
+  scale_fill_manual(values=c("car"= "firebrick", "carpool"="dodgerblue", "bus"="darkgoldenrod2", "rail"="cyan"), name="Mode")+
+  xlab("Cost")+
+theme_bw()
+  
+```
+*Comentarios:*
+
+```{r}
+print("El modo de transporte más caro es: car")
+print("El modo de transporte más barato es: carpool")
+```
+
+
+
+Create a plot showing the univariate distributions of time by car and time by bus. Discuss.
+
+```{r}
+grafica_time <- ggplot(Mode)+
+  geom_density(aes(time.car, fill="car"), color="black", alpha=0.5)+
+  geom_density(aes(time.carpool , fill="carpool"), color="black", alpha=0.5)+
+  geom_density(aes(time.bus, fill="bus"), color="black", alpha=0.5)+
+  geom_density(aes(time.rail, fill="rail"), color="black", alpha=0.5)+
+  scale_fill_manual(values=c("car"= "firebrick", "carpool"="dodgerblue", "bus"="darkgoldenrod2", "rail"="cyan"), name="Mode")+
+  xlab("Time")+
+theme_bw()
+
+
+ggplotly(grafica_time)  
+```
+
+*Comentarios:*
+
+```{r}
+print("Podemos observar que los tiempos entre un modo de transporte y el otro, sean respectivamente car y bus, son muy similares. Pero si observamos el summary del inicio, nos percatamos que el tiempo de bus es mayor (por un par de unidades) al tiempo de car.")
+```
+
+
+
+How do choices relate to cost by the different modes?
+
+```{r}
+varnum <- Mode |> dplyr::select(where(is.numeric))
+varnum <- names(varnum)
+
+for (var in varnum) {
+grafica_box <- ggplot(Mode)+
+  geom_boxplot(aes(choice, eval(as.name(var)), fill=choice), show.legend=FALSE)+
+  ylab(var)+
+  theme_bw()
+  
+  print(grafica_box)
+    
+}
+
+
+
+```
+
+
+
+
+
+
+
+
