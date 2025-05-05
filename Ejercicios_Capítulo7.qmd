@@ -151,7 +151,7 @@ Los coeficientes para ic (costo de instalación) y oc (costo operativo) son nega
 Por ejemplo, un aumento en el costo operativo (oc) disminuye fuertemente la utilidad (β=−0.00957), lo que refleja sensibilidad a los costos recurrentes.
 
 
-Para el casi de la preferencia de alternativa tenemos que:
+Para el caso de la preferencia de alternativa tenemos que:
 
 La alternativa gc (gas central) tiene la mayor frecuencia de elección (63.7%), lo que sugiere una preferencia marcada por sistemas de gas centralizados en los datos. Esto podría deberse a factores como costos históricos, disponibilidad, o percepción de eficiencia.
 
