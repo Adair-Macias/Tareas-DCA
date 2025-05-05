@@ -1,0 +1,160 @@
+---
+title: "Ejercicios_Capítulo7"
+format: html
+editor: visual
+author: "Adair Macías"
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(tidyverse)
+library(discrtr) # A companion package for the book Introduction to Discrete Choice Analysis with `R`
+library(dplyr) # A Grammar of Data Manipulation
+library(ggplot2) # Create Elegant Data Visualisations Using the Grammar of Graphics
+library(mlogit) # Multinomial Logit Models
+library(readr) # Read Rectangular Text Data
+library(gplots) # Various R Programming Tools for Plotting Data
+library(ggmosaic) # Mosaic Plots in the 'ggplot2' Framework
+library(treemapify)
+library(ggridges)
+library(ggalluvial)
+library(evd)
+library(htmlwidgets) # HTML Widgets for R
+library(kableExtra) # Construct Complex Table with kable and Pipe Syntax
+library(plotly) # Create interactive web graphics
+library(tidyr) # Tidy messy data
+
+library(evd)
+```
+
+
+1. Restate the blue bus-red bus situation as a nested logit model. What are the marginal and conditional probabilities of this model?
+
+
+```{r}
+# Función que me servira para calcular probabilidades en el modelo logit anidado
+nlp <- function(lambda) {
+  V_car <- 0
+  V_bus <- 0
+  
+# Valor inclusivo  (nido de autobuses)
+  IV_bus <- V_bus + lambda * log(2)
+  
+# Probabilidad de elegir automóvil
+  P_car <- exp(V_car) / (exp(V_car) + exp(IV_bus))
+  
+# Probabilidad de elegir el nido de autobuses
+  P_bus_nido <- 1 - P_car
+  
+# Probabilidades condicionales dentro del nido
+  P_blue <- P_bus_nido * 0.5
+  P_red <- P_bus_nido * 0.5
+  
+  return(list(P_car = P_car, P_blue = P_blue, P_red = P_red))
+}
+
+# Ejemplo con lambda = 1 (libro: sin correlación)
+lambda <- 1
+probs <- nlp(lambda)
+cat("Lambda =", lambda, "\n",
+    "P_auto:", probs$P_car, "\n",
+    "P_azul:", probs$P_blue, "\n",
+    "P_rojo:", probs$P_red, "\n")
+
+# Ejemplo con lambda = 0.5 (correlación alta)
+lambda <- 0.5
+probs <- nlp(lambda)
+cat("Lambda =", lambda, "\n",
+    "P_auto:", probs$P_car, "\n",
+    "P_azul:", probs$P_blue, "\n",
+    "P_rojo:", probs$P_red, "\n")
+```
+
+Use model nl2 in this chapter and calculate the direct-point elasticity at the mean values of the variables, for an increase in the installation costs of Gas Central systems.
+
+```{r}
+data("Heating", package = "mlogit")
+H <- mlogit.data(Heating, shape = "wide", choice = "depvar", varying = c(3:12))
+```
+
+
+```{r}
+nl2 <- mlogit(
+  depvar ~ ic + oc, 
+  data = H,
+  nests = list(room = c("er", "gr"), central = c("ec", "gc", "hp")),
+  un.nest.el = TRUE,
+  steptol = 1e-12
+)
+
+summary(nl2)
+```
+
+
+```{r}
+# Coeficientes del modelo
+beta_ic <- -8.3899e-05
+beta_oc <- -2.2841e-04
+lambda_central <- 2.7374e-02
+
+# Probabilidades
+P_gc <- 0.636667
+P_central <- 0.763334
+P_gc_cond <- P_gc / P_central 
+
+# Valores medios asumidos
+ic_gc <- 1500
+oc_gc <- 500
+
+# Elasticidad directa
+E_directa <- beta_ic * ic_gc * (1 - P_gc_cond * lambda_central)
+cat("Elasticidad directa de ic en gc:", E_directa * 100, "%\n")
+```
+
+
+Use model nl2 in this chapter and calculate the cross-point elasticity at the mean
+values of the variables, for a 1% increase in the operation costs of Gas Central
+systems.
+
+```{r}
+# Elasticidad cruzada
+E_cruzada <- beta_oc * oc_gc * (-P_gc * lambda_central)
+cat("Elasticidad cruzada de oc en gc:", E_cruzada * 100, "%\n")
+```
+
+
+4. Re-estimate the nested logit model in this chapter, but change the nests to types of energy as follows:
+• Gas: gas central, gas room.
+• Electricity: electric central, electric room, heat pump.
+Use a single coefficient for the inclusive variables (i.e., set un.nest.el = TRUE). Are the results reasonable? Discuss.
+
+
+```{r}
+# Modelo con nidos por tipo de energía
+nl_energy <- mlogit(
+  depvar ~ ic + oc,
+  H,
+  nests = list(gas = c("gc", "gr"), electricity = c("ec", "er", "hp")),
+  un.nest.el = TRUE
+)
+
+summary(nl_energy)
+```
+
+
+Discusión:
+
+Se observa para el caso de los soeficientes de costos que:
+
+Los coeficientes para ic (costo de instalación) y oc (costo operativo) son negativos y significativos (p < 0.01). Esto es consistente con la teoría, pues mayores costos reducen la probabilidad de elegir una alternativa.
+Por ejemplo, un aumento en el costo operativo (oc) disminuye fuertemente la utilidad (β=−0.00957), lo que refleja sensibilidad a los costos recurrentes.
+
+
+Para el casi de la preferencia de alternativa tenemos que:
+
+La alternativa gc (gas central) tiene la mayor frecuencia de elección (63.7%), lo que sugiere una preferencia marcada por sistemas de gas centralizados en los datos. Esto podría deberse a factores como costos históricos, disponibilidad, o percepción de eficiencia.
+
+Por otra parte, si mi razonamiento no es incorrecto, me encuentro con un problema:
+Parámetro de Escala (λ) resulta ser inconsistente, esto debido a que el valor estimado de λ (iv) es 2.949, lo que contradice la teoría del logit anidado, donde λ∈(0,1).
+El que λ>1 implicaría una correlación inversa dentro de los nidos, lo cual carece de sentido económico; sugieriendo que la estructura de nidos no es adecuada para estos datos.
